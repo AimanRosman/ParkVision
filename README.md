@@ -1,7 +1,9 @@
 # Smart Parking & ANPR System (YOLOv26)
 
 > [!NOTE]  
-> This project is a significant upgrade from the original design by **Nur Aiman** (see `Poster Nur Aiman.pdf`). The previous flow used a basic ESP32-only setup for gate control. This version upgrades the architecture to use **Raspberry Pi 5** and **YOLOv26** for high-speed, intelligent ANPR and automated fee management.
+> This project is a significant upgrade from the original design by **Nur Aiman** (see [Poster.jpg](Poster.jpg)). The previous flow used a basic ESP32-only setup for gate control. This version upgrades the architecture to use **Raspberry Pi 5** and **YOLOv26** for high-speed, intelligent ANPR and automated fee management.
+
+![Project Poster](Poster.jpg)
 
 Automatic Number Plate Recognition system using **YOLOv26** - the latest YOLO release optimized for edge devices.
 
