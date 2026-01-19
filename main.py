@@ -263,12 +263,20 @@ class ANPRSystem:
         print(f"  Avg confidence:   {stats['average_confidence']:.2%}")
         print("=" * 40 + "\n")
 
-    def _capture_frame(self, frame: np.ndarray):
+    def _capture_frame(self, frame: np.ndarray, plates: list = []):
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filepath = os.path.join(IMAGES_DIR, f"capture_{timestamp}.jpg")
         os.makedirs(IMAGES_DIR, exist_ok=True)
         cv2.imwrite(filepath, frame)
         print(f"[Capture] Saved: {filepath}")
+        
+        # Show plates on terminal
+        if plates:
+            print(f"[Capture] Detected {len(plates)} plate(s):")
+            for i, p in enumerate(plates):
+                print(f"  {i+1}. {p['plate_text']} (conf: {p['ocr_confidence']:.2%})")
+        else:
+            print("[Capture] No plates detected in this frame.")
 
     def run_camera(self, camera_index: int = CAMERA_INDEX):
         """Run ANPR with live camera feed and interactive buttons"""
@@ -300,7 +308,7 @@ class ANPRSystem:
                 
                 # Handle GUI capture trigger
                 if self.trigger_capture:
-                    self._capture_frame(frame)
+                    self._capture_frame(frame, plates)
                     self.trigger_capture = False
                 
                 # Auto-close gates and update UI
