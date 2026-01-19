@@ -1,4 +1,4 @@
-# Smart Parking & ANPR System (YOLOv26)
+# ParkVision (Smart Parking & ANPR System)
 
 > [!NOTE]  
 > This project is a significant upgrade from the original design by **Nur Aiman** (see [Poster.jpg](Poster.jpg)). The previous flow used a basic ESP32-only setup for gate control. This version upgrades the architecture to use **Raspberry Pi 5** and **YOLOv26** for high-speed, intelligent ANPR and automated fee management.

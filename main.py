@@ -33,7 +33,7 @@ class ANPRSystem:
     def __init__(self):
         """Initialize ANPR system components"""
         print("=" * 50)
-        print("  ANPR System - YOLOv26 on Raspberry Pi 5")
+        print("  ParkVision - YOLOv26 on Raspberry Pi 5")
         print("  Control: Clickable GUI Buttons")
         print("=" * 50)
         
