@@ -83,35 +83,26 @@ class OCRReader:
     
     def read_plate(self, plate_image: np.ndarray) -> tuple:
         """
-        Read text from license plate image
-        
-        Args:
-            plate_image: Cropped license plate BGR image
-            
-        Returns:
-            Tuple of (plate_text, confidence)
+        Read text from license plate image with multiple OCR attempts
         """
         if plate_image is None or plate_image.size == 0:
             return "", 0.0
         
         # Preprocess the image
         processed = self.preprocess(plate_image)
-        
         if processed is None:
             return "", 0.0
         
         try:
-            # Get OCR result with confidence data
+            # Attempt 1: Detailed data extraction
             data = pytesseract.image_to_data(
                 processed, 
                 config=self.config,
                 output_type=pytesseract.Output.DICT
             )
             
-            # Extract text and confidence
             texts = []
             confidences = []
-            
             for i, text in enumerate(data['text']):
                 conf = int(data['conf'][i])
                 if conf > 0 and text.strip():
@@ -123,10 +114,15 @@ class OCRReader:
                 avg_conf = sum(confidences) / len(confidences) / 100.0
                 return plate_text, avg_conf
             
+            # Attempt 2: Simple string extraction (often better for noisy ROIs)
+            plate_text = pytesseract.image_to_string(processed, config=self.config).strip()
+            if plate_text:
+                return plate_text, 0.5 # Default confidence for string backup
+            
             return "", 0.0
             
         except Exception as e:
-            print(f"[OCRReader] Error: {e}")
+            print(f"[OCRReader] OCR Error: {e}")
             return "", 0.0
     
     def clean_plate_text(self, text: str) -> str:

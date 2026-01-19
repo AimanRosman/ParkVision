@@ -277,25 +277,31 @@ class ParkVision:
         print("=" * 40 + "\n")
 
     def _capture_frame(self, frame: np.ndarray, plates: list = []):
+        """Force a high-accuracy OCR on the current ROI when snapped"""
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
         filepath = os.path.join(IMAGES_DIR, f"capture_{timestamp}.jpg")
         os.makedirs(IMAGES_DIR, exist_ok=True)
         cv2.imwrite(filepath, frame)
-        print(f"[Snap] Saved: {filepath}")
+        print(f"\n[Snap] >>> IMAGE SAVED: {filepath}")
+
+        # Force OCR on ROI specifically for this snap
+        roi = frame[ROI_TOP:ROI_BOTTOM, ROI_LEFT:ROI_RIGHT]
+        text, conf = self.ocr.read_plate(roi)
+        cleaned = self.ocr.clean_plate_text(text)
         
-        if plates:
-            print(f"[Snap] Detected {len(plates)} plate(s) in ROI:")
-            for i, p in enumerate(plates):
-                print(f"  {i+1}. {p['plate_text']} (conf: {p['ocr_confidence']:.2%})")
+        if cleaned:
+            print(f"[Snap] >>> NUMBER PLATE READ: {cleaned} (confidence: {conf:.2%})")
+        elif text.strip():
+            print(f"[Snap] >>> RAW TEXT READ: {text.strip()} (confidence: {conf:.2%})")
         else:
-            # Try a one-off OCR on the full frame just in case
-            print("[Snap] No plates in ROI. Scanning full frame...")
+            print("[Snap] >>> No text detected in Reading Zone. Trying full frame...")
             text, conf = self.ocr.read_plate(frame)
-            text = self.ocr.clean_plate_text(text)
-            if self.ocr.validate_plate(text):
-                print(f"  Found on full frame: {text} (conf: {conf:.2%})")
+            cleaned = self.ocr.clean_plate_text(text)
+            if cleaned:
+                print(f"[Snap] >>> FOUND ON FULL FRAME: {cleaned}")
             else:
-                print("  No plates found anywhere.")
+                print("[Snap] >>> No text found anywhere.")
+        print("-" * 50)
 
     def run_camera(self, camera_index: int = CAMERA_INDEX):
         """Run ParkVision with live camera feed"""
