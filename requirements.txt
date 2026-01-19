@@ -1,0 +1,22 @@
+# ANPR System Requirements for Raspberry Pi 5
+# Python 3.11+
+
+# YOLOv26 - Latest version with edge optimization
+ultralytics>=8.3.60
+
+# Computer Vision
+opencv-python>=4.9.0
+numpy>=1.26.0
+Pillow>=10.0.0
+
+# OCR
+pytesseract>=0.3.10
+
+# GPIO for Pi 5
+gpiozero>=2.0.1
+pigpio>=1.78
+
+# Note: On Raspberry Pi, also install system packages:
+# sudo apt install tesseract-ocr libgl1-mesa-glx pigpio
+# sudo systemctl enable pigpiod
+# sudo systemctl start pigpiod

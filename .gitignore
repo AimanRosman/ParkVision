@@ -1,0 +1,16 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+anpr_env/
+.env
+
+# ANPR Data
+data/*.db
+data/plates/
+models/*.pt
+
+# OS
+.DS_Store
+Thumbs.db
