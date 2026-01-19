@@ -54,3 +54,12 @@ MIN_SAVE_INTERVAL = 5  # Seconds between saving same plate
 FEE_HOUR_1 = 3.0       # RM 3 for <= 1 hour
 FEE_DAILY_MAX = 5.0    # RM 5 for > 1 hour (daily)
 CURRENCY = "RM"
+
+# ============ GUI BUTTONS ============
+BUTTON_HEIGHT = 50
+BUTTON_WIDTH = 150
+BUTTON_MARGIN = 20
+BUTTON_COLOR = (45, 45, 45)       # Dark gray
+BUTTON_HOVER_COLOR = (70, 70, 70) # Lighter gray
+BUTTON_TEXT_COLOR = (255, 255, 255)
+CONTROL_BAR_HEIGHT = 80

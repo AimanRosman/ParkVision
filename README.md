@@ -61,13 +61,18 @@ python main.py --image car.jpg
 python main.py --export plates.csv
 ```
 
-## Keyboard Controls
+## GUI & Controls
 
-| Key | Action |
-|-----|--------|
-| `q` | Quit application |
-| `s` | Show statistics |
-| `c` | Capture current frame |
+The system features a clickable control bar at the bottom of the window:
+
+| Button | Action |
+|--------|--------|
+| **CAPTURE** | Save the current frame as an image |
+| **STATS** | Print database statistics to the terminal |
+| **QUIT** | Safely shut down the application |
+
+### Keyboard Shortcuts
+- `q`: Alternative way to quit the application.
 
 ## Project Structure
 
