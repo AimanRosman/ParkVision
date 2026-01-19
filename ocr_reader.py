@@ -160,17 +160,9 @@ class OCRReader:
         
         return cleaned
     
-    def validate_plate(self, text: str, min_length: int = 4, max_length: int = 10) -> bool:
+    def validate_plate(self, text: str, min_length: int = 2, max_length: int = 15) -> bool:
         """
-        Validate if text looks like a valid license plate
-        
-        Args:
-            text: Plate text to validate
-            min_length: Minimum valid length
-            max_length: Maximum valid length
-            
-        Returns:
-            True if valid plate format
+        Validate if text looks like a valid recordable string
         """
         if not text:
             return False
@@ -179,11 +171,9 @@ class OCRReader:
         if length < min_length or length > max_length:
             return False
         
-        # Must contain at least one letter and one number
-        has_letter = any(c.isalpha() for c in text)
-        has_number = any(c.isdigit() for c in text)
-        
-        return has_letter and has_number
+        # More lenient: allow anything that has at least one alphanumeric character
+        # (Already cleaned to only A-Z0-9 by clean_plate_text)
+        return any(c.isalnum() for c in text)
 
 
 # For testing

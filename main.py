@@ -110,15 +110,28 @@ class ParkVision:
             self.running = False
 
     def _draw_ui(self, frame: np.ndarray):
-        """Draw clickable buttons and ROI box"""
+        """Draw clickable buttons, ROI box, and recognized text"""
         h, w = frame.shape[:2]
         control_bar_y = h - CONTROL_BAR_HEIGHT
         
         # Draw ROI Box
         if SHOW_ROI:
-            cv2.rectangle(frame, (ROI_LEFT, ROI_TOP), (ROI_RIGHT, ROI_BOTTOM), (255, 0, 0), 2)
-            cv2.putText(frame, "READING ZONE", (ROI_LEFT, ROI_TOP - 10), 
-                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
+            # Color changes if something is being read
+            display_text = getattr(self, 'current_roi_text', "")
+            box_color = (0, 255, 0) if display_text else (255, 0, 0)
+            
+            cv2.rectangle(frame, (ROI_LEFT, ROI_TOP), (ROI_RIGHT, ROI_BOTTOM), box_color, 2)
+            
+            # Label
+            label = "READING..." if display_text else "READING ZONE"
+            cv2.putText(frame, label, (ROI_LEFT, ROI_TOP - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, box_color, 1)
+            
+            # Show live recognized text above ROI
+            if display_text:
+                conf = getattr(self, 'current_roi_conf', 0)
+                cv2.putText(frame, f"READ: {display_text} ({conf:.0%})", (ROI_LEFT, ROI_TOP - 30),
+                           cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 255), 2)
         
         # Draw control bar background
         cv2.rectangle(frame, (0, control_bar_y), (w, h), (30, 30, 30), -1)
@@ -156,6 +169,10 @@ class ParkVision:
         # Read text
         plate_text, ocr_conf = self.ocr.read_plate(roi)
         plate_text = self.ocr.clean_plate_text(plate_text)
+        
+        # Update live feedback state
+        self.current_roi_text = plate_text
+        self.current_roi_conf = ocr_conf
         
         detected_plates = []
         if self.ocr.validate_plate(plate_text):
