@@ -1,16 +1,17 @@
 # ParkVision (Smart Parking & ANPR System)
 
 > [!NOTE]  
-> This project is a significant upgrade from the original design by **Nur Aiman** (see [Poster.jpg](Poster.jpg)). The previous flow used a basic ESP32-only setup for gate control. This version upgrades the architecture to use **Raspberry Pi 5** and **YOLOv26** for high-speed, intelligent ANPR and automated fee management.
+> This project is a significant upgrade from the original design by **Nur Aiman** (see [Poster.jpg](Poster.jpg)). The previous flow used a basic ESP32-only setup for gate control. This version upgrades the architecture to use **Raspberry Pi 5** with **Direct ROI OCR** for high-speed, intelligent ANPR and automated fee management.
 
 ![Project Poster](Poster.jpg)
 
-Automatic Number Plate Recognition system using **YOLOv26** - the latest YOLO release optimized for edge devices.
+Automatic Number Plate Recognition system using **Direct Region of Interest (ROI) OCR**. This simplified architecture removes the detection layer (YOLO) to provide faster, more deterministic reading performance on edge devices like the Raspberry Pi 5.
 
 ## Features
 
-- 🚗 **Real-time plate detection** using YOLOv26 Nano
-- 🔤 **OCR text extraction** using Tesseract
+- 🎯 **Direct ROI OCR** using Tesseract (No YOLO overhead)
+- 🔤 **Fast text extraction** with localized reading zones
+- 🚧 **Visual Reading Zone** monitoring in real-time
 - 💾 **SQLite database** for storing detected plates
 - 🖼️ **Auto-save plate images** with timestamps
 - 📊 **Statistics dashboard** (press 's')

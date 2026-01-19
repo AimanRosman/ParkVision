@@ -13,9 +13,12 @@ CAMERA_WIDTH = 1280
 CAMERA_HEIGHT = 720
 CAMERA_FPS = 30
 
-# ============ DETECTION ============
-CONFIDENCE_THRESHOLD = 0.5
-IOU_THRESHOLD = 0.45  # For YOLOv26, NMS-free but still useful for filtering
+# ============ OCR / DIRECT READING ============
+ROI_TOP = 400       # Top Y coordinate for reading zone
+ROI_BOTTOM = 600    # Bottom Y coordinate for reading zone
+ROI_LEFT = 300      # Left X coordinate
+ROI_RIGHT = 980     # Right X coordinate
+SHOW_ROI = True     # Show the reading zone box on screen
 
 # ============ OCR ============
 # Tesseract config for license plates

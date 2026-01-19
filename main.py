@@ -1,9 +1,7 @@
 """
-ANPR - Automatic Number Plate Recognition System
+ParkVision - Automatic License Plate Reading System
 Main application with OpenCV GUI for Raspberry Pi 5
-Integrated with Ultrasonic sensors, Servos, and Clickable Buttons
-
-Uses YOLOv26 for plate detection and Tesseract for OCR
+Simplified direct-read version (No YOLO Detection)
 """
 import cv2
 import time
@@ -22,27 +20,19 @@ except ImportError:
     print("[Warning] GPIO libraries not found. Running in simulation mode.")
 
 from config import *
-from plate_detector import PlateDetector
 from ocr_reader import OCRReader
 from database import PlateDatabase
 
 
-class ANPRSystem:
-    """Main ANPR application class with Gate Control and Clickable Buttons"""
+class ParkVision:
+    """ParkVision application using direct OCR on a specific ROI"""
     
     def __init__(self):
-        """Initialize ANPR system components"""
+        """Initialize ParkVision components"""
         print("=" * 50)
-        print("  ParkVision - YOLOv26 on Raspberry Pi 5")
-        print("  Control: Clickable GUI Buttons")
+        print("  ParkVision - License Plate Reader (Direct)")
+        print("  Architecture: Direct ROI OCR (No YOLO)")
         print("=" * 50)
-        
-        # Initialize detector
-        print("\n[Init] Loading YOLOv26 model...")
-        self.detector = PlateDetector(
-            model_path=MODEL_PATH if os.path.exists(MODEL_PATH) else None,
-            confidence=CONFIDENCE_THRESHOLD
-        )
         
         # Initialize OCR
         print("[Init] Initializing OCR reader...")
@@ -70,7 +60,7 @@ class ANPRSystem:
         self.running = True
         self.mouse_pos = (0, 0)
         self.buttons = [
-            {"id": "capture", "label": "CAPTURE", "rect": (0, 0, 0, 0)},
+            {"id": "capture", "label": "SNAP", "rect": (0, 0, 0, 0)},
             {"id": "stats", "label": "STATS", "rect": (0, 0, 0, 0)},
             {"id": "quit", "label": "QUIT", "rect": (0, 0, 0, 0)}
         ]
@@ -113,23 +103,22 @@ class ANPRSystem:
     def _handle_button_click(self, btn_id: str):
         """Execute actions based on button clicks"""
         if btn_id == "capture":
-            print("[GUI] Capture button clicked")
-            # This will be handled in the next frame cycle by a flag if needed, 
-            # or we can pass a 'trigger_capture' flag. 
-            # For now, let's just trigger a capture directly if we had the frame.
-            # We'll set a flag to capture the next available frame.
             self.trigger_capture = True
         elif btn_id == "stats":
-            print("[GUI] Stats button clicked")
             self._print_stats()
         elif btn_id == "quit":
-            print("[GUI] Quit button clicked")
             self.running = False
 
-    def _draw_buttons(self, frame: np.ndarray):
-        """Draw clickable buttons on the control bar"""
+    def _draw_ui(self, frame: np.ndarray):
+        """Draw clickable buttons and ROI box"""
         h, w = frame.shape[:2]
         control_bar_y = h - CONTROL_BAR_HEIGHT
+        
+        # Draw ROI Box
+        if SHOW_ROI:
+            cv2.rectangle(frame, (ROI_LEFT, ROI_TOP), (ROI_RIGHT, ROI_BOTTOM), (255, 0, 0), 2)
+            cv2.putText(frame, "READING ZONE", (ROI_LEFT, ROI_TOP - 10), 
+                       cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 0, 0), 1)
         
         # Draw control bar background
         cv2.rectangle(frame, (0, control_bar_y), (w, h), (30, 30, 30), -1)
@@ -160,20 +149,27 @@ class ANPRSystem:
             cv2.putText(frame, btn['label'], (tx, ty), cv2.FONT_HERSHEY_SIMPLEX, 0.6, BUTTON_TEXT_COLOR, 2)
 
     def process_frame(self, frame: np.ndarray, at_entrance: bool = False, at_exit: bool = False) -> tuple:
-        """Process a single frame through the ANPR pipeline"""
-        detections = self.detector.detect(frame)
-        processed_plates = []
-        for det in detections:
-            plate_text, ocr_conf = self.ocr.read_plate(det['cropped'])
-            plate_text = self.ocr.clean_plate_text(plate_text)
-            if self.ocr.validate_plate(plate_text):
-                det['plate_text'] = plate_text
-                det['ocr_confidence'] = ocr_conf
-                if at_entrance: self._handle_entrance(plate_text, det['confidence'], det['cropped'])
-                if at_exit: self._handle_exit(plate_text)
-                processed_plates.append(det)
-        annotated = self.detector.draw_detections(frame, processed_plates, BOX_COLOR, TEXT_COLOR, BOX_THICKNESS)
-        return annotated, processed_plates
+        """Process ROI through OCR directly"""
+        # Crop ROI
+        roi = frame[ROI_TOP:ROI_BOTTOM, ROI_LEFT:ROI_RIGHT]
+        
+        # Read text
+        plate_text, ocr_conf = self.ocr.read_plate(roi)
+        plate_text = self.ocr.clean_plate_text(plate_text)
+        
+        detected_plates = []
+        if self.ocr.validate_plate(plate_text):
+            plate_info = {
+                'plate_text': plate_text,
+                'ocr_confidence': ocr_conf,
+                'roi': (ROI_LEFT, ROI_TOP, ROI_RIGHT - ROI_LEFT, ROI_BOTTOM - ROI_TOP)
+            }
+            detected_plates.append(plate_info)
+            
+            if at_entrance: self._handle_entrance(plate_text, ocr_conf, roi)
+            if at_exit: self._handle_exit(plate_text)
+            
+        return frame, detected_plates
 
     def _handle_entrance(self, plate_text: str, confidence: float, plate_image: np.ndarray):
         """Handle car entering"""
@@ -268,18 +264,24 @@ class ANPRSystem:
         filepath = os.path.join(IMAGES_DIR, f"capture_{timestamp}.jpg")
         os.makedirs(IMAGES_DIR, exist_ok=True)
         cv2.imwrite(filepath, frame)
-        print(f"[Capture] Saved: {filepath}")
+        print(f"[Snap] Saved: {filepath}")
         
-        # Show plates on terminal
         if plates:
-            print(f"[Capture] Detected {len(plates)} plate(s):")
+            print(f"[Snap] Detected {len(plates)} plate(s) in ROI:")
             for i, p in enumerate(plates):
                 print(f"  {i+1}. {p['plate_text']} (conf: {p['ocr_confidence']:.2%})")
         else:
-            print("[Capture] No plates detected in this frame.")
+            # Try a one-off OCR on the full frame just in case
+            print("[Snap] No plates in ROI. Scanning full frame...")
+            text, conf = self.ocr.read_plate(frame)
+            text = self.ocr.clean_plate_text(text)
+            if self.ocr.validate_plate(text):
+                print(f"  Found on full frame: {text} (conf: {conf:.2%})")
+            else:
+                print("  No plates found anywhere.")
 
     def run_camera(self, camera_index: int = CAMERA_INDEX):
-        """Run ANPR with live camera feed and interactive buttons"""
+        """Run ParkVision with live camera feed"""
         print(f"[Camera] Opening camera {camera_index}...")
         cap = cv2.VideoCapture(camera_index)
         if not cap.isOpened(): return
@@ -303,10 +305,10 @@ class ANPRSystem:
                 if self.sensor1 and self.sensor1.distance * 100 < GATE_OPEN_DISTANCE: car_at_entrance = True
                 if self.sensor2 and self.sensor2.distance * 100 < GATE_OPEN_DISTANCE: car_at_exit = True
                 
-                # Process frame
+                # Process frame (Direct ROI OCR)
                 annotated, plates = self.process_frame(frame, at_entrance=car_at_entrance, at_exit=car_at_exit)
                 
-                # Handle GUI capture trigger
+                # Handle GUI snap trigger
                 if self.trigger_capture:
                     self._capture_frame(frame, plates)
                     self.trigger_capture = False
@@ -316,10 +318,9 @@ class ANPRSystem:
                 self._draw_fee_overlay(annotated)
                 self._update_fps()
                 
-                # Create a black bar at the bottom for controls if not part of frame
-                # We'll just draw directly on the frame but make sure it's tall enough
+                # Create display frame
                 final_display = cv2.copyMakeBorder(annotated, 0, CONTROL_BAR_HEIGHT, 0, 0, cv2.BORDER_CONSTANT, value=(0,0,0))
-                self._draw_buttons(final_display)
+                self._draw_ui(final_display)
                 
                 if SHOW_FPS:
                     cv2.putText(final_display, f"FPS: {self.fps:.1f}", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
@@ -344,8 +345,8 @@ class ANPRSystem:
 
 
 def main():
-    anpr = ANPRSystem()
-    anpr.run_camera(CAMERA_INDEX)
+    app = ParkVision()
+    app.run_camera(CAMERA_INDEX)
 
 if __name__ == "__main__":
     main()
